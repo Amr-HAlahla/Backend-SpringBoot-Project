@@ -1,0 +1,106 @@
+
+version: "3.7"
+services:
+  employee-service:
+    build:
+      context: ./employee/employee
+      dockerfile: Dockerfile
+    restart: always
+    ports:
+      - "8090:8090"
+    networks:
+      - task2_springapimysql-net
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysqldb:3306/task2db?allowPublicKeyRetrieval=true
+      - SPRING_DATASOURCE_USERNAME=root
+      - SPRING_DATASOURCE_PASSWORD=amr1200902
+      - SPRING_APPLICATION_NAME=employee
+      - SPRING_CLOUD_CONFIG_URI=http://config-server:8888
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery:8761/eureka/
+    depends_on:
+      - mysqldb
+      - config-server
+      - discovery
+      - gateway
+    volumes:
+      - .m2:/root/.m2
+
+  mysqldb:
+    image: "mysql:8.0"
+    restart: always
+    ports:
+      - "3307:3306"
+    networks:
+      - task2_springapimysql-net
+    environment:
+      MYSQL_DATABASE: task2db
+      MYSQL_ROOT_PASSWORD: amr1200902
+
+  config-server:
+    build:
+      context: ./config-server/config-server  # Adjust this path to where your Dockerfile is
+      dockerfile: Dockerfile
+    ports:
+      - "8888:8888"
+    networks:
+      - task2_springapimysql-net
+
+  discovery:
+    build:
+      context: ./discovery/discovery  # Adjust this path to where your Dockerfile is
+      dockerfile: Dockerfile
+    ports:
+      - "8761:8761"
+    networks:
+      - task2_springapimysql-net
+    depends_on:
+      - config-server
+    environment:
+      - SPRING_APPLICATION_NAME=discovery
+      - SPRING_CLOUD_CONFIG_URI=http://config-server:8888
+
+  gateway:
+    build:
+      context: ./gateway
+      dockerfile: Dockerfile
+    ports:
+      - "8222:8222"
+    networks:
+      - task2_springapimysql-net
+    depends_on:
+      - discovery
+      - config-server
+    environment:
+      - SPRING_APPLICATION_NAME=gateway
+      - SPRING_CLOUD_CONFIG_URI=http://config-server:8888
+      - Employee_SERVICEURL=http://employee-service:8090
+      - Department_SERVICEURL=http://department-service:8070
+
+  department-service:
+    build:
+      context: ./department # Adjust this path to where your Dockerfile is
+      dockerfile: Dockerfile
+    restart: always
+    ports:
+      - "8070:8070"
+    networks:
+      - task2_springapimysql-net
+    environment:
+      - SPRING_APPLICATION_NAME=department
+      - SPRING_CLOUD_CONFIG_URI=http://config-server:8888
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://discovery:8761/eureka/
+    depends_on:
+      - config-server
+      - discovery
+      - gateway
+  zipkin:
+    image: openzipkin/zipkin:latest  # Uses the latest version of the Zipkin Docker image
+    container_name: zipkin
+    ports:
+      - "9411:9411"  # Exposes the Zipkin UI and API on port 9411
+
+networks:
+  task2_springapimysql-net:
+    driver: bridge
+
+
