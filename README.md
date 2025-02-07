@@ -44,8 +44,8 @@ This project demonstrates the use of **microservices architecture** for managing
 ### Running with Docker
  1. Clone the repository:
    ```bash
-   git clone https://github.com/shereenIbdah/MiniBackendSpringWebProject.git
-   cd TrainingProject
+   git clone https://github.com/Amr-HAlahla/Backend-SpringBoot-Project.git
+   cd Backend-SpringBoot-Project
 ```
 2. docker-compose up --build
 
